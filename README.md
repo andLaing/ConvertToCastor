@@ -9,7 +9,6 @@ numba
 numpy
 pytables
 docopt
-struct
 configparser
 
 # make_castor.py
