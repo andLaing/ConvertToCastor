@@ -11,6 +11,8 @@ YML_FILENAME=environment-${CONDA_ENV_NAME}.yml
 echo creating ${YML_FILENAME}
 
 cat <<EOF > ${YML_FILENAME}
+name: ${CONDA_ENV_NAME}
+dependencies:
 - python       = 3.8
 - docopt       = 0.6.2
 - hdf5         = 1.12.1
