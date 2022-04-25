@@ -243,9 +243,6 @@ def get_path_through_phantom(lor):
     z_c = 186 / 2 #mm
     r_c = 216 / 2 #mm
     dir, ray = ray_func(lor)
-    body_a   = dir[0]**2 + dir[1]**2
-    body_b   = 2 * (dir[0] * lor[1] + dir[1] * lor[2])
-    body_c   = lor[1]**2 + lor[2]**2 - r_c**2
     face1_t  = ( z_c - lor[3]) / (lor[6] - lor[3])
     face2_t  = (-z_c - lor[3]) / (lor[6] - lor[3])
     pos_f1   = ray(face1_t)
@@ -255,13 +252,11 @@ def get_path_through_phantom(lor):
     if in_face1 and in_face2:
         return np.linalg.norm(pos_f1 - pos_f2)
     
-    determ = body_b**2 - 4 * body_a * body_c
+    determ, t1, t2 = cylinder_body_intersect(r_c, ray(0), dir)
     if determ < 0:
         #print("No intersection found.")
         return 0.0
 
-    t1     = (-body_b + np.sqrt(determ)) / (2 * body_a)
-    t2     = (-body_b - np.sqrt(determ)) / (2 * body_a)
     if in_face1:
         t_body = max(abs(t1 - face1_t), abs(t2 - face1_t))
         pos2   = ray(t_body)
@@ -269,7 +264,7 @@ def get_path_through_phantom(lor):
     if in_face2:
         t_body = max(abs(t1 - face2_t), abs(t2 - face2_t))
         pos2   = ray(t_body)
-        return np.linalg.norm(pos_f1 - pos2)
+        return np.linalg.norm(pos_f2 - pos2)
 
     pos1 = ray(t1)
     pos2 = ray(t2)
@@ -279,8 +274,51 @@ def get_path_through_phantom(lor):
     return np.linalg.norm(pos1 - pos2)
 
 
+@njit
+def cylinder_body_intersect(r_cyl, ray0, ray_dir):
+    """
+    Parameters for intersection with the body of
+    an axially infinte cylinder.
+    """
+    body_a = ray_dir[0]**2 + ray_dir[1]**2
+    body_b = 2 * (ray_dir[0] * ray0[0] + ray_dir[1] * ray0[1])
+    body_c = ray0[0]**2 + ray0[1]**2 - r_cyl**2
+    determ = body_b**2 - 4 * body_a * body_c
+    if determ < 0:
+        return -1, None, None
+
+    t1 = (-body_b + np.sqrt(determ)) / (2 * body_a)
+    t2 = (-body_b - np.sqrt(determ)) / (2 * body_a)
+    return determ, t1, t2
+
+
 @jit
-def attenuation_correction(lor, mm_steel=0.0):
+def get_path_through_steel(lor):
+    """
+    Assumes valid LOR so that the steel will always
+    be traversed in the body of the cylinder.
+    """
+    dir, ray      = ray_func(lor)
+    ray0          = ray(0)
+    steel0R_inner = 325   #mm
+    steel0R_outer = 326.5 #mm
+
+    _, t1_inner, t2_inner = cylinder_body_intersect(steel0R_inner, ray0, dir)
+    _, t1_outer, t2_outer = cylinder_body_intersect(steel0R_outer, ray0, dir)
+    steel0_path = abs(t1_inner - t1_outer) + abs(t2_inner - t2_outer)
+
+    steel1R_inner = 351.5 #mm
+    steel1R_outer = 353   #mm
+
+    _, t1_inner, t2_inner = cylinder_body_intersect(steel1R_inner, ray0, dir)
+    _, t1_outer, t2_outer = cylinder_body_intersect(steel1R_outer, ray0, dir)
+    steel1_path = abs(t1_inner - t1_outer) + abs(t2_inner - t2_outer)
+
+    return steel0_path + steel1_path
+
+
+@jit
+def attenuation_correction(lor, steel=False):
     """
     Get the attenuation correction factor for a 
     given LOR. Assumes the attenuation for water
@@ -290,4 +328,8 @@ def attenuation_correction(lor, mm_steel=0.0):
     atn_const = 0.0096 # mm^-1
     atn_steel = 0.0653 # mm^-1
     h2O_path  = get_path_through_phantom(lor)
-    return np.exp(atn_const * h2O_path + atn_steel * mm_steel)
+    if steel:
+        steel_exp = atn_steel * get_path_through_steel(lor)
+    else:
+        steel_exp = 0.0
+    return np.exp(atn_const * h2O_path + steel_exp)
