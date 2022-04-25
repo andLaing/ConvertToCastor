@@ -328,7 +328,7 @@ def attenuation_correction(lor, steel=False):
     atn_const = 0.0096 # mm^-1
     atn_steel = 0.0653 # mm^-1
     h2O_path  = get_path_through_phantom(lor)
-    if steel:
+    if steel and h2O_path > 0:
         steel_exp = atn_steel * get_path_through_steel(lor)
     else:
         steel_exp = 0.0
