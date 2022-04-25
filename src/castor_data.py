@@ -65,7 +65,7 @@ def make_data_binary(in_files, out_file, tbl_name, max_lors, indices, tof_res, a
 
                 data_out.write(struct.pack('<I', t     ))
                 if atn:
-                    atn_corr = attenuation_correction(lor)
+                    atn_corr = attenuation_correction(lor, steel=True)
                     data_out.write(struct.pack('<f', atn_corr))
                 # For TOF will need to invert dt
                 # since dt = t2 - t1 (2022 standard)
