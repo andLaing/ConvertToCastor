@@ -2,11 +2,11 @@ import sys
 
 import numpy as np
 
-from src.geometry import convert_to_lor_space
-from src.geometry import make_scattergram
-from src.utils    import check_number_lors
-from src.utils    import read_lors
-from src.utils    import save_scattergram
+from src.utils import check_number_lors
+from src.utils import convert_to_lor_space
+from src.utils import make_scattergram
+from src.utils import read_lors
+from src.utils import save_scattergram
 
 
 def get_scatter(filename, outfile, dt):

@@ -2,10 +2,11 @@ import struct
 
 from . geometry import attenuation_correction
 from . utils    import circular_coordinates
+from . utils    import convert_to_lor_space
 from . utils    import read_lors
 
 
-def make_data_header(data_name, geom_name, nlors, tof_res, tof_rng, atn):
+def make_data_header(data_name, geom_name, nlors, tof_res, tof_rng, atn, scat):
     if tof_res:
         tof_flag  = 1
         tof_fwhm  = tof_res
@@ -13,6 +14,7 @@ def make_data_header(data_name, geom_name, nlors, tof_res, tof_rng, atn):
     else:
         tof_flag  = 0
         tof_fwhm  = 0
+    scat_flag = 1 if scat else 0
     header = """Scanner name: {SCANNAME}
 Data filename: {DATAFILE}
 Number of events: {NLOR}
@@ -25,7 +27,7 @@ TOF resolution (ps): {TOFFWHM}
 List TOF measurement range (ps): {TOFRANGE}
 Attenuation correction flag: {ATN}
 Normalization correction flag: 0
-Scatter correction flag: 0
+Scatter correction flag: {SCAT}
 Random correction flag: 0"""
     with open(data_name[:-3] + 'cdh', 'w') as hdr_out:
         hdr_out.write(header.format(SCANNAME = geom_name    ,
@@ -35,10 +37,15 @@ Random correction flag: 0"""
                                     TOF      = tof_flag     ,
                                     TOFFWHM  = tof_fwhm     ,
                                     TOFRANGE = tof_rng      ,
-                                    ATN      = atn*1        ))
+                                    ATN      = atn*1        ,
+                                    SCAT     = scat_flag    ))
 
 
-def make_data_binary(in_files, out_file, tbl_name, max_lors, indices, tof_res, atn, eng_range):
+def make_data_binary(in_files, out_file,
+                     tbl_name, max_lors,
+                     indices , tof_res ,
+                     atn     , scat    ,
+                     eng_range):
     lor_count = 0
     dt_min    = 0.0
     dt_max    = 0.0
@@ -67,6 +74,15 @@ def make_data_binary(in_files, out_file, tbl_name, max_lors, indices, tof_res, a
                 if atn:
                     atn_corr = attenuation_correction(lor, steel=True)
                     data_out.write(struct.pack('<f', atn_corr))
+                if scat:
+                    (dt_lor, r_lor ,  _,
+                     z_lor , th_lor, *_) = convert_to_lor_space(lor)
+                    # This could clearly be done better.
+                    lvec = [r_lor, z_lor, th_lor]
+                    if tof_res:
+                        lvec.insert(0, dt_lor)
+                    scat_corr = scat(lvec)
+                    data_out.write(struct.pack('<f', scat_corr))
                 # For TOF will need to invert dt
                 # since dt = t2 - t1 (2022 standard)
                 # since CASToR expects t1 - t2.

@@ -4,17 +4,18 @@
 
 Usage: make_castor.py (--geom GEOMFILE | --conf CONFFILE) [--out OUTFILE]
                       [--nlor NLOR] [--tbl INTABLE] [--tof TOFR] [--atn]
-                      [--eng ENGRNG] [--q CHRGRNG] INPUT...
+                      [--eng ENGRNG] [--q CHRGRNG] [--scat SCATF] INPUT...
 
 Arguments:
     INPUT hdf5 table files with LORs
 
 Options:
     --geom=GEOMFILE File with the geometry to be used for indexing the LORS.
-                    If not provided uses name provided in configuration to and
-                    saves geometry.
+                    If not provided uses name provided in conf to build and
+                    save geometry.
     --conf=CONFFILE Configuration file with detector dimensions etc used to
-                    generate geometry file before conversion.
+                    generate geometry file before conversion. Required if
+                    geom nor used.
     --out=OUTFILE   Name with path for outfile. If not provided uses
                     INPUT_GEOMFILE.cdh/cdf
     --nlor=NLOR     Maximum number of LORs to process, default all found.
@@ -27,17 +28,21 @@ Options:
     --tof=TOFR      The TOF resolution in ps for the reconstruction.
                     If not used, no TOF info in the data files.
     --atn           Include attenuation prediction in output.
+    --scat=SCATF    Correct for scatter using the histogrammed info predictions
+                    in the provided file(s).
 """
 
 import math
 
 from docopt import docopt
+from glob   import iglob
 
 from src.castor_data import make_data_header
 from src.castor_data import make_data_binary
 from src.geometry    import get_geom_info
 from src.geometry    import get_index_param
 from src.utils       import accepted_range
+from src.utils       import read_scattergram
 
 
 if __name__ == '__main__':
@@ -54,15 +59,18 @@ if __name__ == '__main__':
     tbl_name  =     args['--tbl' ]
     tof_res   =     args['--tof' ]
     atn       =     args['--atn' ]
+    scat      =     args['--scat']
     eng_range = accepted_range(args)
+    scat_pred = read_scattergram(iglob(scat + '*'), tof_res) if scat else None
     # TODO can we have multiple files or are we obliged to have one
     # per run?
     lor_count, tof_rng = make_data_binary(in_files, out_file ,
                                           tbl_name, max_lors ,
                                           indices , tof_res  ,
-                                          atn     , eng_range)
+                                          atn     , scat_pred,
+                                          eng_range)
     
     # Now the header.
     make_data_header(out_file, geom_lut.split('/')[-1][:-4],
-                     lor_count, tof_res, tof_rng, atn)
+                     lor_count, tof_res, tof_rng, atn, scat)
                 
