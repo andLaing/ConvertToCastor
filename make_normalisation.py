@@ -40,7 +40,7 @@ def generate_normalisation_lors(outfile, geom_arr, atn):
             angSep    = min(angDiff, 2 * np.pi - angDiff)
             if angSep < ang_sep: continue
             if lor_count % 10000 == 0: print("processed", lor_count, "LORs")
-            ## TODO attennuation and normalisation options
+            ## TODO normalisation options
             if atn:
                 lor = (0.0, pos1[0] * np.cos(pos1[1]), pos1[0] * np.sin(pos1[1]), pos1[2],
                             pos2[0] * np.cos(pos2[1]), pos2[0] * np.sin(pos2[1]), pos2[2])

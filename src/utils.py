@@ -1,11 +1,35 @@
+import sys
 import math
 import tables as tb
 
 
-def read_lors(filename, tbl_name):
+def read_lors(filename, tbl_name, min_max_it=(0, sys.maxsize), min_eng=0):
     with tb.open_file(filename) as h5in:
-        for lor in h5in.root[tbl_name]:
-            yield lor
+        for i, lor in enumerate(h5in.root[tbl_name]):
+            if i == min_max_it[1]: break
+            if i >= min_max_it[0]:
+                if min(*lor[-2:]) <= min_eng:
+                    continue
+                yield lor
+
+
+def check_number_lors(filename, tbl_name):
+    with tb.open_file(filename) as h5in:
+        return h5in.root[tbl_name].shape[0]
+
+
+def save_scattergram(filename, edges, values, duration):
+    """
+    Output scattergram to a file.
+    """
+    group_name = 'rzphi' if len(edges) == 3 else 'dtrzphi'
+    with tb.open_file(filename, 'a') as h5out:
+        grp = h5out.create_group(h5out.root, group_name)
+        # Add the time of data as an attribute
+        grp._v_attrs.duration = duration
+        for i, edg in enumerate(edges):
+            h5out.create_array(grp, 'bin_edges' + str(i), obj=edg, shape=edg.shape)
+        h5out.create_array(grp, 'scatterPerSecond', obj=values, shape=values.shape)
 
 
 def circular_coordinates(x, y):
