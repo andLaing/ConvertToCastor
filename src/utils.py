@@ -72,7 +72,7 @@ def make_scattergram(lors_space, dts=None):
     # Time normalisation dummy for now
     time_dur = len(lors_space) * 0.001 #1 ms per event for tests.
     # True scatter at the moment.
-    mask = np.amax(lors_space[:, -2:], axis=1) < 511.0
+    mask = np.amin(lors_space[:, -2:], axis=1) < 511.0
     cols = [1, 3, 4]
     bins = [np.linspace(   0,   385, 20        ),
             np.arange  (-500,   500, 50        ),
