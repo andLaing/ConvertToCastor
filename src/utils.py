@@ -49,15 +49,13 @@ def convert_to_lor_space(lor):
     dx     =  lor[4] - lor[1]
     dy     =  lor[5] - lor[2]
     r_lor  = abs(dx * lor[2] - dy * lor[1]) / np.sqrt(dx * dx + dy * dy)
-    phi    = np.arctan2(dx, dy)
+    phi    = np.arctan2(dx, -dy)
+    trans1 = lor[2] * np.cos(phi) - lor[1] * np.sin(phi)
+    trans2 = lor[5] * np.cos(phi) - lor[4] * np.sin(phi)
+    theta  = np.arctan2(lor[6] - lor[3], trans2 - trans1)
     if phi < 0:
         # No need for 2pi as back-to-back gammas, -phi equivalent to pi-phi.
         phi = np.pi + phi
-    r1     = np.sqrt(lor[1] * lor[1] + lor[2] * lor[2])
-    r2     = np.sqrt(lor[4] * lor[4] + lor[5] * lor[5])
-    trans1 = r1 * np.sin(np.arctan2(lor[2], r1) - phi)
-    trans2 = r2 * np.sin(np.arctan2(lor[5], r2) - phi)
-    theta  = np.arctan2(lor[6] - lor[3], trans2 - trans1)
     if theta < 0:
         # No need for 2pi as back-to-back gammas, -theta equivalent to pi-theta.
         theta = np.pi + theta
@@ -74,12 +72,12 @@ def make_scattergram(lors_space, dts=None):
     # True scatter at the moment.
     mask = np.amin(lors_space[:, -2:], axis=1) < 511.0
     cols = [1, 3, 4]
-    bins = [np.linspace(   0,   385, 20        ),
-            np.arange  (-500,   500, 50        ),
-            np.arange  (   0, np.pi, np.pi / 10)]
+    bins = [np.linspace(   0,   385, 20),
+            np.linspace(-500,   500, 20),
+            np.linspace(   0, np.pi, 20)]
     if dts:
         cols.insert(0, 0)
-        bins.insert(0, [-20, -5, -4, -3, -2, -1, -0.5, 0, 0.5, 1, 2, 3, 4, 5, 20])
+        bins.insert(0, [-20, -2, -1.5, -1, -0.5, -0.25, 0, 0.25, 0.5, 1, 1.5, 2, 20])
     H, edges = np.histogramdd(lors_space[np.ix_(mask, cols)], bins=bins)
     return edges, H, time_dur
 
