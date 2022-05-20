@@ -1,3 +1,4 @@
+import functools
 import sys
 import math
 
@@ -20,19 +21,19 @@ def check_number_lors(filename, tbl_name):
         return h5in.root[tbl_name].shape[0]
 
 
-def save_scattergram(filename, edges, values, duration):
+def save_scattergram(filename, edges, scat_vals, all_vals, duration):
     """
     Output scattergram to a file.
     """
-    # TODO fix name!
-    group_name = 'rzphi' if len(edges) == 3 else 'dtrzphi'
+    group_name = 'rzth' if len(edges) == 3 else 'dtrzth'
     with tb.open_file(filename, 'a') as h5out:
         grp = h5out.create_group(h5out.root, group_name)
         # Add the time of data as an attribute
         grp._v_attrs.duration = duration
         for i, edg in enumerate(edges):
             h5out.create_array(grp, 'bin_edges' + str(i), obj=edg, shape=edg.shape)
-        h5out.create_array(grp, 'scatterPerSecond', obj=values, shape=values.shape)
+        h5out.create_array(grp, 'scatter', obj=scat_vals, shape=scat_vals.shape)
+        h5out.create_array(grp, 'allLOR' , obj=all_vals , shape=all_vals .shape)
 
 
 def convert_to_lor_space(lor):
@@ -78,8 +79,9 @@ def make_scattergram(lors_space, dts=None):
     if dts:
         cols.insert(0, 0)
         bins.insert(0, [-20, -2, -1.5, -1, -0.5, -0.25, 0, 0.25, 0.5, 1, 1.5, 2, 20])
-    H, edges = np.histogramdd(lors_space[np.ix_(mask, cols)], bins=bins)
-    return edges, H, time_dur
+    HScat, edges = np.histogramdd(lors_space[np.ix_(mask, cols)], bins = bins)
+    HAll , _     = np.histogramdd(lors_space[:          , cols ], bins = bins)
+    return edges, HScat, HAll, time_dur
 
 
 def circular_coordinates(x, y):
@@ -105,26 +107,34 @@ def read_scattergram(filename_gen, tof=None):
     Read in and normalise the scattergram and
     return a function to extract info.
     """
-    # TODO fix name!
-    grp_name  = 'rzphi'
+    grp_name  = 'rzth'
     ndim      = 3
     bin_names = ['bin_edges'+str(i) for i in range(3)]
     time_dur  = 0.0
-    hist_name = 'scatterPerSecond' # TODO fix name!! Not per second anymore
+    scat_name = 'scatter'
+    all_name  = 'allLOR'
     if tof:
-        grp_name  = 'dtrzphi'
+        grp_name  = 'dtrzth'
         ndim     += 1
         bin_edges.append('bin_edges3')
     with tb.open_file(next(filename_gen)) as h5first:
         time_dur += h5first.root[grp_name]._v_attrs.duration
         bin_edges = [h5first.root['/'.join((grp_name, edges))].read() for edges in bin_names]
-        scatters  = h5first.root['/'.join((grp_name, hist_name))].read()
+        scatters  = h5first.root['/'.join((grp_name, scat_name))].read()
+        all_lor   = h5first.root['/'.join((grp_name,  all_name))].read()
     for fn in filename_gen:
         with tb.open_file(fn) as histIn:
             time_dur += histIn.root[grp_name]._v_attrs.duration
-            scatters += histIn.root['/'.join((grp_name, hist_name))].read()
+            scatters += histIn.root['/'.join((grp_name, scat_name))].read()
+            all_lor  += histIn.root['/'.join((grp_name,  all_name))].read()
     # Normalise by the total duration
     scatters /= time_dur
+    # Average per lor bin
+    scatters = np.divide(scatters, all_lor, out=np.zeros_like(scatters), where=all_lor!=0)
+    # Normalise to bin sizes allowing for non-even bins
+    bin_norm = functools.reduce(lambda a, b: a[..., np.newaxis] * np.diff(b),
+                                bin_edges[1:], np.diff(bin_edges[0]))
+    scatters /= bin_norm    
     def get_scatter_value(lor_vec):
         indx = tuple(np.argmax(bins>x) - 1 for bins, x in zip(bin_edges, lor_vec))
         return scatters[indx]

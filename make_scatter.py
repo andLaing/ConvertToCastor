@@ -25,9 +25,9 @@ def get_scatter(filename, outfile, dt):
                                             'reco_info/lors'      ,
                                             min_max_it = evt_range,
                                             min_eng    = min_eng  ))))
-        edges, scatter_rate, duration = make_scattergram(lors, dt)
+        edges, scatters, hist_all, duration = make_scattergram(lors, dt)
         outname = outfile[:-3] + f'_{i}.h5'
-        save_scattergram(outname, edges, scatter_rate, duration)
+        save_scattergram(outname, edges, scatters, hist_all, duration)
 
 
 if __name__ == '__main__':
