@@ -16,7 +16,7 @@ def get_scatter(filename, outfile, dt):
     min_eng = 434.0 #hardwire for first tests.
     # Let's chunk the input so we don't end up with loads
     # of lors in memory. brute force version.
-    max_per_file = 5000000
+    max_per_file = 10000000
     nchunk       = check_number_lors(filename, 'reco_info/lors') // max_per_file + 1
     for i in range(nchunk):
         evt_range = (i * max_per_file, (i + 1) * max_per_file)
