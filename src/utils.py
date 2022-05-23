@@ -132,9 +132,9 @@ def read_scattergram(filename_gen, tof=None):
     # Average per lor bin
     scatters = np.divide(scatters, all_lor, out=np.zeros_like(scatters), where=all_lor!=0)
     # Normalise to bin sizes allowing for non-even bins
-    bin_norm = functools.reduce(lambda a, b: a[..., np.newaxis] * np.diff(b),
-                                bin_edges[1:], np.diff(bin_edges[0]))
-    scatters /= bin_norm    
+    # bin_norm = functools.reduce(lambda a, b: a[..., np.newaxis] * np.diff(b),
+    #                             bin_edges[1:], np.diff(bin_edges[0]))
+    # scatters /= bin_norm
     def get_scatter_value(lor_vec):
         indx = tuple(np.argmax(bins>x) - 1 for bins, x in zip(bin_edges, lor_vec))
         return scatters[indx]
