@@ -113,10 +113,10 @@ def read_scattergram(filename_gen, tof=None):
     time_dur  = 0.0
     scat_name = 'scatter'
     all_name  = 'allLOR'
-    if tof:
-        grp_name  = 'dtrzth'
-        ndim     += 1
-        bin_names.append('bin_edges3')
+    # if tof:
+    #     grp_name  = 'dtrzth'
+    #     ndim     += 1
+    #     bin_names.append('bin_edges3')
     with tb.open_file(next(filename_gen)) as h5first:
         time_dur += h5first.root[grp_name]._v_attrs.duration
         bin_edges = [h5first.root['/'.join((grp_name, edges))].read() for edges in bin_names]
