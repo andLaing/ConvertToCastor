@@ -73,9 +73,12 @@ def make_scattergram(lors_space, dts=None):
     # True scatter at the moment.
     mask = np.amin(lors_space[:, -2:], axis=1) < 511.0
     cols = [1, 3, 4]
-    bins = [np.linspace(   0,   385, 20),
-            np.linspace(-500,   500, 20),
-            np.linspace(   0, np.pi, 20)]
+    #bins = [np.linspace(   0,   385, 20),
+    #        np.linspace(-500,   500, 20),
+    #        np.linspace(   0, np.pi, 20)]
+    bins = [np.concatenate((np.linspace(0.0, 250, 68), np.linspace(270,   370,  4))),
+            np.concatenate((np.linspace(-500, -250, 5), np.linspace(-240, 250, 49), np.linspace(300, 500, 4))),
+            np.concatenate((np.linspace(0.0, 1.0, 20), np.linspace(2.0, np.pi, 21)))]
     if dts:
         cols.insert(0, 0)
         bins.insert(0, [-20, -2, -1.5, -1, -0.5, -0.25, 0, 0.25, 0.5, 1, 1.5, 2, 20])
