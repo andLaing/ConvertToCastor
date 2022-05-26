@@ -15,6 +15,7 @@ def make_data_header(data_name, geom_name, nlors, tof_res, tof_rng, atn, scat):
         tof_flag  = 0
         tof_fwhm  = 0
     scat_flag = 1 if scat else 0
+    data_short = data_name.split('/')[-1]
     header = """Scanner name: {SCANNAME}
 Data filename: {DATAFILE}
 Number of events: {NLOR}
@@ -31,7 +32,7 @@ Scatter correction flag: {SCAT}
 Random correction flag: 0"""
     with open(data_name[:-3] + 'cdh', 'w') as hdr_out:
         hdr_out.write(header.format(SCANNAME = geom_name    ,
-                                    DATAFILE = data_name    ,
+                                    DATAFILE = data_short   ,
                                     NLOR     = nlors        ,
                                     TOTTIME  = nlors * 0.001,
                                     TOF      = tof_flag     ,
