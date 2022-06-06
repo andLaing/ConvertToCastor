@@ -51,8 +51,8 @@ def convert_to_lor_space(lor):
     dy     =  lor[5] - lor[2]
     r_lor  = abs(dx * lor[2] - dy * lor[1]) / np.sqrt(dx * dx + dy * dy)
     phi    = np.arctan2(dx, -dy)
-    trans1 = lor[2] * np.cos(phi) - lor[1] * np.sin(phi)
-    trans2 = lor[5] * np.cos(phi) - lor[4] * np.sin(phi)
+    trans1 = trans_from_phi(lor[1], lor[2], phi)
+    trans2 = trans_from_phi(lor[4], lor[5], phi)
     theta  = np.arctan2(lor[6] - lor[3], trans2 - trans1)
     if phi < 0:
         # No need for 2pi as back-to-back gammas, -phi equivalent to pi-phi.
@@ -61,6 +61,24 @@ def convert_to_lor_space(lor):
         # No need for 2pi as back-to-back gammas, -theta equivalent to pi-theta.
         theta = np.pi + theta
     return lor[0], r_lor, phi, z_lor, theta, *lor[-2:]
+
+
+def rlor_from_phi(x, y, phi):
+    return x * np.cos(phi) + y * np.sin(phi)
+
+
+def trans_from_phi(x, y, phi):
+    return y * np.sin(phi) - x * np.sin(phi)
+
+
+def z_range(lor, phi, cryst_axial, theta):
+    trans0 = trans_from_phi(lor[1], lor[2], phi)
+    trans1 = trans_from_phi(lor[4], lor[5], phi)
+    z0 = lor[3] - trans0 * (lor[3] - lor[6]) / (trans0 - trans1)
+    def zrange_from_trans(trans):
+        z_cent = trans * np.tan(theta)
+        return z0 + z_cent - cryst_axial / 2, z0 + z_cent + cryst_axial / 2
+    return zrange_from_trans
 
 
 def make_scattergram(lors_space, dts=None):
@@ -117,10 +135,10 @@ def read_scattergram(filename_gen, tof=None):
     time_dur  = 0.0
     scat_name = 'scatter'
     all_name  = 'allLOR'
-    if tof:
-        grp_name  = 'dtrzth'
-        ndim     += 1
-        bin_names.append('bin_edges3')
+    # if tof:
+    #     grp_name  = 'dtrzth'
+    #     ndim     += 1
+    #     bin_names.append('bin_edges3')
     with tb.open_file(next(filename_gen)) as h5first:
         time_dur += h5first.root[grp_name]._v_attrs.duration
         bin_edges = [h5first.root['/'.join((grp_name, edges))].read() for edges in bin_names]
@@ -143,4 +161,24 @@ def read_scattergram(filename_gen, tof=None):
         indx = tuple(np.argmax(bins>x) - 1 for bins, x in zip(bin_edges, lor_vec))
         return scatters[indx]
     return get_scatter_value
+
+
+class lor_norm(tb.IsDescription):
+    cry0 = tb.UInt32Col (shape=(), pos=0)
+    cry1 = tb.UInt32Col (shape=(), pos=1)
+    norm = tb.Float32Col(shape=(), pos=2)
+
+def lor_normalisation(h5norm, grp_name, tbl_name):
+    if hasattr(h5norm, grp_name):
+        grp = getattr(h5norm.root, grp_name)
+    else:
+        grp = h5norm.create_group(h5norm.root, grp_name)
+        
+    tbl = grp.creat_table(grp, tbl_name, lor_norm)
+    def write_norm(cr0, cr1, norm):
+        tbl.row['cry0'] = cr0
+        tbl.row['cry1'] = cr1
+        tbl.row['norm'] = norm
+        tbl.row.append()
+    return write_norm
 
