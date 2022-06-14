@@ -44,7 +44,7 @@ def generate_normalisation_lors(outfile, geom_arr, atn):
             if atn:
                 lor = (0.0, pos1[0] * np.cos(pos1[1]), pos1[0] * np.sin(pos1[1]), pos1[2],
                             pos2[0] * np.cos(pos2[1]), pos2[0] * np.sin(pos2[1]), pos2[2])
-                atn_corr = attenuation_correction(lor)
+                atn_corr = attenuation_correction(lor, True)
                 binOut.write(struct.pack('<f', atn_corr))
             binOut.write(struct.pack('<I', i))
             binOut.write(struct.pack('<I', j + i+1))
