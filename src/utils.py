@@ -68,7 +68,7 @@ def rlor_from_phi(x, y, phi):
 
 
 def trans_from_phi(x, y, phi):
-    return y * np.sin(phi) - x * np.sin(phi)
+    return y * np.cos(phi) - x * np.sin(phi)
 
 
 def z_range(lor, phi, cryst_axial, theta):
