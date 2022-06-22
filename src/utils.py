@@ -49,14 +49,14 @@ def convert_to_lor_space(lor):
     z_lor  = (lor[3] + lor[6]) / 2
     dx     =  lor[4] - lor[1]
     dy     =  lor[5] - lor[2]
-    r_lor  = abs(dx * lor[2] - dy * lor[1]) / np.sqrt(dx * dx + dy * dy)
+    area   = dx * lor[2] - dy * lor[1]
+    r_lor  = abs(area) / np.sqrt(dx * dx + dy * dy)
     phi    = np.arctan2(dx, -dy)
+    if area < 0:
+        phi = np.pi + phi
     trans1 = trans_from_phi(lor[1], lor[2], phi)
     trans2 = trans_from_phi(lor[4], lor[5], phi)
     theta  = np.arctan2(lor[6] - lor[3], trans2 - trans1)
-    if phi < 0:
-        # No need for 2pi as back-to-back gammas, -phi equivalent to pi-phi.
-        phi = np.pi + phi
     if theta < 0:
         # No need for 2pi as back-to-back gammas, -theta equivalent to pi-theta.
         theta = np.pi + theta
