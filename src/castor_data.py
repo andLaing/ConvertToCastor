@@ -80,8 +80,8 @@ def make_data_binary(in_files, out_file,
                      z_lor , th_lor, *_) = convert_to_lor_space(lor)
                     # This could clearly be done better.
                     lvec = [r_lor, z_lor, th_lor]
-                    if tof_res:
-                        lvec.insert(0, dt_lor)
+                    # if tof_res:
+                    #     lvec.insert(0, dt_lor)
                     scat_corr = scat(lvec)
                     data_out.write(struct.pack('<f', scat_corr))
                 # For TOF will need to invert dt
