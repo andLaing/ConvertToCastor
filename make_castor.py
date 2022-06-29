@@ -4,7 +4,7 @@
 
 Usage: make_castor.py (--geom GEOMFILE | --conf CONFFILE) [--out OUTFILE]
                       [--nlor NLOR] [--tbl INTABLE] [--tof TOFR] [--atn]
-                      [--eng ENGRNG] [--q CHRGRNG] [--scat SCATF] INPUT...
+                      [--eng ENGRNG] [--q CHRGRNG] [--scat SCATF] [--norm NORMF] INPUT...
 
 Arguments:
     INPUT hdf5 table files with LORs
@@ -30,6 +30,8 @@ Options:
     --atn           Include attenuation prediction in output.
     --scat=SCATF    Correct for scatter using the histogrammed info predictions
                     in the provided file(s).
+    --norm=NORMF    If LOR normalisation factors to be included filename for
+                    lookup.
 """
 
 import math
@@ -60,6 +62,7 @@ if __name__ == '__main__':
     tof_res   =     args['--tof' ]
     atn       =     args['--atn' ]
     scat      =     args['--scat']
+    norm      =     args['--norm']
     eng_range = accepted_range(args)
     scat_pred = read_scattergram(iglob(scat + '*'), tof_res) if scat else None
     # TODO can we have multiple files or are we obliged to have one
@@ -68,9 +71,9 @@ if __name__ == '__main__':
                                           tbl_name, max_lors ,
                                           indices , tof_res  ,
                                           atn     , scat_pred,
-                                          eng_range)
+                                          norm    , eng_range)
     
     # Now the header.
     make_data_header(out_file, geom_lut.split('/')[-1][:-4],
-                     lor_count, tof_res, tof_rng, atn, scat)
+                     lor_count, tof_res, tof_rng, atn, scat, norm)
                 
