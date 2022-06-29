@@ -163,22 +163,41 @@ def read_scattergram(filename_gen, tof=None):
     return get_scatter_value
 
 
-class lor_norm(tb.IsDescription):
-    cry0 = tb.UInt32Col (shape=(), pos=0)
-    cry1 = tb.UInt32Col (shape=(), pos=1)
-    norm = tb.Float32Col(shape=(), pos=2)
+def read_normalisation(filename):
+    with tb.open_file(filename) as h5in:
+        mdata    = h5in.root.lor_acceptance.metadata[0]
+        nbins    = list(mdata)[ :4]
+        bin_lims = list(mdata)[4: ]
+        bin_wids = np.divide(np.diff(np.reshape(bin_lims, (len(bin_lims) // 2, 2)), axis=1).T, nbins)
+        #bin_low = [np.linspace(minmax[i], minmax[i+1], nbin) for i, nbin in zip(range(0, 8, 2), nbins)]
+        # T due to the way array saved. Julia effect?
+        gen      = h5in.root.lor_acceptance.gen.read().T
+        acc      = h5in.root.lor_acceptance.acc.read().T
+        return bin_lims[::2], bin_wids, np.divide(acc, gen, out=np.zeros(nbins), where=gen!=0)
 
-def lor_normalisation(h5norm, grp_name, tbl_name):
-    if hasattr(h5norm, grp_name):
-        grp = getattr(h5norm.root, grp_name)
-    else:
-        grp = h5norm.create_group(h5norm.root, grp_name)
+
+def normalisation_function(filename):
+    minima, bin_wid, acceptance = read_normalisation(filename)
+    def get_normalisation(lor):
+        lor_bin = tuple(map(lambda x, y, z: int(np.floor((x - y) / z)), lor, minima, bin_wid))
+        return 1.0 / acceptance[lor_bin]
+    return get_normalisation
+# class lor_norm(tb.IsDescription):
+#     cry0 = tb.UInt32Col (shape=(), pos=0)
+#     cry1 = tb.UInt32Col (shape=(), pos=1)
+#     norm = tb.Float32Col(shape=(), pos=2)
+
+# def lor_normalisation(h5norm, grp_name, tbl_name):
+#     if hasattr(h5norm, grp_name):
+#         grp = getattr(h5norm.root, grp_name)
+#     else:
+#         grp = h5norm.create_group(h5norm.root, grp_name)
         
-    tbl = grp.creat_table(grp, tbl_name, lor_norm)
-    def write_norm(cr0, cr1, norm):
-        tbl.row['cry0'] = cr0
-        tbl.row['cry1'] = cr1
-        tbl.row['norm'] = norm
-        tbl.row.append()
-    return write_norm
+#     tbl = grp.creat_table(grp, tbl_name, lor_norm)
+#     def write_norm(cr0, cr1, norm):
+#         tbl.row['cry0'] = cr0
+#         tbl.row['cry1'] = cr1
+#         tbl.row['norm'] = norm
+#         tbl.row.append()
+#     return write_norm
 
