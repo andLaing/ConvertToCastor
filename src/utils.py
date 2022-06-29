@@ -172,13 +172,14 @@ def read_normalisation(filename):
         # T due to the way array saved. Julia effect?
         gen      = h5in.root.lor_acceptance.gen.read().T
         acc      = h5in.root.lor_acceptance.acc.read().T
-        return bin_lims[::2], bin_wids, np.divide(acc, gen, out=np.zeros(nbins), where=gen!=0)
+        return bin_lims[::2], nbins, bin_wids, np.divide(acc, gen, out=np.zeros(nbins), where=gen!=0)
 
 
 def normalisation_function(filename):
-    minima, bin_wid, acceptance = read_normalisation(filename)
+    minima, nbins, bin_wid, acceptance = read_normalisation(filename)
     def get_normalisation(lor):
         lor_bin = tuple(map(lambda x, y, z: int(np.floor((x - y) / z)), lor, minima, bin_wid))
+        if any(map(lambda x, y: x>=y, lor_bin, nbins)): return 0.0
         if acceptance[lor_bin] == 0: return 0.0
         if acceptance[lor_bin] < 0: print("Found a negative. ", acceptance[lor_bin])
         return 1.0 / acceptance[lor_bin]
