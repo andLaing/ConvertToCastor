@@ -7,6 +7,9 @@ import configparser as confp
 import numpy        as np
 
 from . utils import circular_coordinates
+from . utils import convert_to_lor_space
+from . utils import rlor_from_phi
+from . utils import z_range
 
 
 def get_geom_info(args):
@@ -135,19 +138,24 @@ crystals size depth: {CRYTHICK}
                                   NCRYRL    = ', '.join(map(str, ncry_layer ))   ))
 
 
+def get_crystal_defs(geom_filename):
+    with open(geom_filename) as hdrin:
+        for line in hdrin:
+            if 'crystals size depth' in line:
+                depths = list(map(float, line.split(':')[-1].split(',')))
+            elif 'angular separation' in line:
+                angles = list(map(float, line.split(':')[-1].split(',')))
+            elif 'axial separation' in line:
+                axlen  = float(line.split(':')[-1].split(',')[-1])
+            elif 'cryst. per ring' in line:
+                ncryst = list(map(int  , line.split(':')[-1].split(',')))
+    return depths, angles, axlen, ncryst
+
+
 def get_geometry_histogram(lut_filename, edges=True):
     # get some info from the header.
     if edges:
-        with open(lut_filename[:-3] + 'hscan') as hdrin:
-            for line in hdrin:
-                if 'crystals size depth' in line:
-                    depths = list(map(float, line.split(':')[-1].split(',')))
-                elif 'angular separation' in line:
-                    angles = list(map(float, line.split(':')[-1].split(',')))
-                elif 'axial separation' in line:
-                    axlen  = float(line.split(':')[-1].split(',')[-1])
-                elif 'cryst. per ring' in line:
-                    ncryst = list(map(int  , line.split(':')[-1].split(',')))
+        depths, angles, axlen, ncryst = get_crystal_defs(lut_filename[:-3] + 'hscan')
     else:
         ## We just want the crystal positions.
         depths = [0]
@@ -334,4 +342,55 @@ def attenuation_correction(lor, steel=False):
         steel_exp = 0.0
     return np.exp(atn_const * h2O_path + steel_exp)
 
-#def define_roi(phi, theta, cry1_centre, )
+
+def norm_lor_roi(lor, xcorners, ycorners, phi, theta, cryst_axial):
+    """
+    Define a region with fixed phi_lor and theta_lor
+    within which the average solid angles will be
+    calculated.
+    """
+    phis     = [phi] * len(xcorners)
+    r_min    = min(map(rlor_from_phi, xcorners, ycorners, phis))
+    r_max    = max(map(rlor_from_phi, xcorners, ycorners, phis))
+    z_limits = z_range(lor, phi, cryst_axial, theta)
+    return r_min, r_max, z_limits
+
+
+def crystal_corners(rcryst, thcryst, depth, ang_sep):
+    """
+    Get the positions of the corners of a crystal.
+    """
+    return [((rcryst + r*depth)*np.cos(thcryst + th*ang_sep),
+             (rcryst + r*depth)*np.sin(thcryst + th*ang_sep)) for r in [-0.5, 0.5] for th in [-0.5, 0.5]]
+
+
+# def calculate_solid_angles(rmin, rmax, tmax, fzlimits, npoint):
+#     """
+#     Calculate the solid angles subtended for each point
+#     within the ROI defined by rmin, rmax; 0, tmax and the function
+#     fzlimits(t).
+#     """
+#     # how to subdivide?
+#     for r in np.linspace(rmin, rmax, npoint):
+#         for t in np.linspace(0.0, tmax, npoint):
+#             for z in np.linspace(*fzlimits(t), npoint):
+
+
+
+
+# def calculate_normalisation(lor, r0, r1, th0, th1, depth, cryst_axial, cryst_angSep):
+#     """
+#     Calculate the normalisation factors per LOR.
+#     """
+#     _, _, lor_phi, _, lor_theta, *_ = convert_to_lor_space(lor)
+#     xy_corners = np.concatenate((crystal_corners(r0, th0, depth, cryst_angSep),
+#                                  crystal_corners(r1, th1, depth, cryst_angSep)))
+#     roi_rmin, roi_rmax, roi_zlimits = norm_lor_roi(lor            ,
+#                                                    xy_corners[:,0],
+#                                                    xy_corners[:,1],
+#                                                    lor_phi        ,
+#                                                    lor_theta      ,
+#                                                    cryst_axial    )
+#     #Solid angle
+
+#     #Xe path
