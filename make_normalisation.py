@@ -56,8 +56,8 @@ def generate_normalisation_lors(outfile, geom_name, ang_sep, atn, norm):
             if norm:
                 lor = (0.0, pos1[0] * np.cos(pos1[1]), pos1[0] * np.sin(pos1[1]), pos1[2],
                             pos2[0] * np.cos(pos2[1]), pos2[0] * np.sin(pos2[1]), pos2[2])
-                _, rlor, plor, zlor, tlor, *_ = convert_to_lor_space(lor)
-                norm_fact = norm_lookup((rlor, plor, zlor, tlor))
+                lor_space = convert_to_lor_space(lor)
+                norm_fact = norm_lookup(lor_space[1:-2])
                 binOut.write(struct.pack('<f', norm_fact))
             binOut.write(struct.pack('<I', i))
             binOut.write(struct.pack('<I', j + i+1))
