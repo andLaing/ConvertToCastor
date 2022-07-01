@@ -29,9 +29,9 @@ TOF information flag: {TOF}
 TOF resolution (ps): {TOFFWHM}
 List TOF measurement range (ps): {TOFRANGE}
 Attenuation correction flag: {ATN}
-Normalization correction flag: 0
+Normalization correction flag: {NORM}
 Scatter correction flag: {SCAT}
-Random correction flag: {NORM}"""
+Random correction flag: 0"""
     with open(data_name[:-3] + 'cdh', 'w') as hdr_out:
         hdr_out.write(header.format(SCANNAME = geom_name    ,
                                     DATAFILE = data_short   ,
@@ -41,7 +41,8 @@ Random correction flag: {NORM}"""
                                     TOFFWHM  = tof_fwhm     ,
                                     TOFRANGE = tof_rng      ,
                                     ATN      = atn*1        ,
-                                    SCAT     = scat_flag    ))
+                                    SCAT     = scat_flag    ,
+                                    NORM     = norm_flag    ))
 
 
 def make_data_binary(in_files, out_file ,

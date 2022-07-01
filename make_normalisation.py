@@ -80,7 +80,7 @@ Normalization correction flag: {NORM}"""
                                     NLORS   = lor_count,
                                     GEOM    = geom_name,
                                     ATN     = atn*1    ,
-                                    norm    = norm_flag))
+                                    NORM    = norm_flag))
 
 
 if __name__ == '__main__':
