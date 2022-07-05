@@ -52,7 +52,7 @@ def convert_to_lor_space(lor):
     area   = dx * lor[2] - dy * lor[1]
     r_lor  = abs(area) / np.sqrt(dx * dx + dy * dy)
     phi    = np.arctan2(dx, -dy)
-    if area < 0:
+    if dx < 0:
         phi = np.pi + phi
     trans1 = trans_from_phi(lor[1], lor[2], phi)
     trans2 = trans_from_phi(lor[4], lor[5], phi)
