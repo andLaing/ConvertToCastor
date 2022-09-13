@@ -1,9 +1,10 @@
 import struct
 
 from . geometry import attenuation_correction
+from . geometry import interaction_norm
 from . utils    import circular_coordinates
 from . utils    import convert_to_lor_space
-from . utils    import normalisation_function
+# from . utils    import normalisation_function
 from . utils    import read_lors
 
 
@@ -53,8 +54,8 @@ def make_data_binary(in_files, out_file ,
     lor_count = 0
     dt_min    = 0.0
     dt_max    = 0.0
-    if norm:
-        norm_lookup = normalisation_function(norm)
+    # if norm:
+    #     norm_lookup = normalisation_function(norm)
     with open(out_file, 'wb') as data_out:
         for fn in in_files:
             print('Processing file ', fn)
@@ -91,8 +92,9 @@ def make_data_binary(in_files, out_file ,
                     scat_corr = scat(lvec)
                     data_out.write(struct.pack('<f', scat_corr))
                 if norm:
-                    lor_space = convert_to_lor_space(lor)
-                    norm_fact = norm_lookup(lor_space[1:-2])
+                    # lor_space = convert_to_lor_space(lor)
+                    # norm_fact = norm_lookup(lor_space[1:-2])
+                    norm_fact = interaction_norm(lor)
                     data_out.write(struct.pack('<f', norm_fact))
                 # For TOF will need to invert dt
                 # since dt = t2 - t1 (2022 standard)

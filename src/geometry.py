@@ -11,6 +11,8 @@ from . utils import convert_to_lor_space
 from . utils import rlor_from_phi
 from . utils import z_range
 
+atn_lxe   = 0.0096 # mm^-1
+atn_steel = 0.0653 # mm^-1
 
 def get_geom_info(args):
     geom_lut = ''
@@ -311,18 +313,43 @@ def get_path_through_steel(lor):
     steel0R_inner = 325   #mm
     steel0R_outer = 326.5 #mm
 
+    def paths(t1_i, t1_o, t2_i, t2_o):
+        # This is safe assuming positive ts, correct if LOR properly defined.
+        path1 = min(t1_i, t2_i) - min(t1_o, t2_o)
+        path2 = max(t1_i, t2_i) - max(t1_o, t2_o)
+        return abs(path1) + abs(path2)
+    
     _, t1_inner, t2_inner = cylinder_body_intersect(steel0R_inner, ray0, dir)
     _, t1_outer, t2_outer = cylinder_body_intersect(steel0R_outer, ray0, dir)
-    steel0_path = abs(t1_inner - t1_outer) + abs(t2_inner - t2_outer)
+    steel0_path = paths(t1_inner, t1_outer, t2_inner, t2_outer)
 
     steel1R_inner = 351.5 #mm
     steel1R_outer = 353   #mm
 
     _, t1_inner, t2_inner = cylinder_body_intersect(steel1R_inner, ray0, dir)
     _, t1_outer, t2_outer = cylinder_body_intersect(steel1R_outer, ray0, dir)
-    steel1_path = abs(t1_inner - t1_outer) + abs(t2_inner - t2_outer)
+    steel1_path = paths(t1_inner, t1_outer, t2_inner, t2_outer)
 
     return steel0_path + steel1_path
+
+
+def get_path_through_xenon(lor):
+    """
+    Paths from entry in LXe to interaction points.
+    """
+    p1 = lor[1:4]
+    p2 = lor[4:7]
+    dir, ray = ray_func(lor)
+
+    xe_innerR = 353 #mm, again hardwired rubbish
+    _, t1, t2 = cylinder_body_intersect(xe_innerR, ray(0), dir)
+    # because p1 is ray(0), and all t should be positive.
+    t1_pos = ray(min(t1, t2))
+    t2_pos = ray(max(t1, t2))
+
+    path1 = np.linalg.norm(p1 - t1_pos)
+    path2 = np.linalg.norm(p2 - t2_pos)
+    return path1, path2
 
 
 @jit
@@ -333,14 +360,27 @@ def attenuation_correction(lor, steel=False):
     and a cylinder of Jaszczak size.
     Needs to be generalised!!
     """
-    atn_const = 0.0096 # mm^-1
-    atn_steel = 0.0653 # mm^-1
-    h2O_path  = get_path_through_phantom(lor)
+    # atn_const = 0.0096 # mm^-1
+    # atn_steel = 0.0653 # mm^-1
+    h2O_path = get_path_through_phantom(lor)
     if steel and h2O_path > 0:
         steel_exp = atn_steel * get_path_through_steel(lor)
     else:
         steel_exp = 0.0
-    return np.exp(atn_const * h2O_path + steel_exp)
+    # return np.exp(atn_const * h2O_path + steel_exp)
+    return np.exp(atn_lxe * h2O_path + steel_exp)
+
+
+def interaction_norm(lor):
+    """
+    Get a normalisation value for a LOR based on the
+    steel attenuation and the LXe interaction prob.
+    """
+    steel_path         = get_path_through_steel(lor)
+    xe_path1, xe_path2 = get_path_through_xenon(lor)
+    steel_corr         = np.exp(atn_steel * steel_path)
+    lxe_corr           = (1 - np.exp(-atn_lxe * xe_path1)) * (1 - np.exp(-atn_lxe * xe_path2))
+    return steel_corr * lxe_corr
 
 
 def norm_lor_roi(lor, xcorners, ycorners, phi, theta, cryst_axial):
