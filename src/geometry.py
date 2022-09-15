@@ -321,6 +321,8 @@ def get_path_through_steel(lor):
     
     _, t1_inner, t2_inner = cylinder_body_intersect(steel0R_inner, ray0, dir)
     _, t1_outer, t2_outer = cylinder_body_intersect(steel0R_outer, ray0, dir)
+    if not all((t1_inner, t2_inner, t1_outer, t2_outer)):
+        return 0
     steel0_path = paths(t1_inner, t1_outer, t2_inner, t2_outer)
 
     steel1R_inner = 351.5 #mm
@@ -328,6 +330,8 @@ def get_path_through_steel(lor):
 
     _, t1_inner, t2_inner = cylinder_body_intersect(steel1R_inner, ray0, dir)
     _, t1_outer, t2_outer = cylinder_body_intersect(steel1R_outer, ray0, dir)
+    if not all((t1_inner, t2_inner, t1_outer, t2_outer)):
+        return 0
     steel1_path = paths(t1_inner, t1_outer, t2_inner, t2_outer)
 
     return steel0_path + steel1_path
