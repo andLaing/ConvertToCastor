@@ -348,7 +348,7 @@ def get_path_through_xenon(lor):
     xe_innerR = 353 #mm, again hardwired rubbish
     _, t1, t2 = cylinder_body_intersect(xe_innerR, ray(0), dir)
     if not all((t1,t2)):
-        return 0
+        return 0, 0
     # because p1 is ray(0), and all t should be positive.
     t1_pos = ray(min(t1, t2))
     t2_pos = ray(max(t1, t2))
