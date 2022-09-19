@@ -2,7 +2,7 @@
 
 """Make CASToR compatible normalisation file from LORs with crystal pairs at least MINANG apart.
 
-Usage: make_normalisation.py (--geom GEOMFILE) [--ang MINANG] [--atn] [--norm NORM] OUTPUT
+Usage: make_normalisation.py (--geom GEOMFILE) [--ang MINANG] [--atn] [--norm NORM] [--nlor NLOR] OUTPUT
 
 Arguments:
     OUTPUT binary filename with normalisation info
@@ -16,6 +16,7 @@ Options:
     --atn           Use attenuation correction factors.
     --norm=NORM     Calculate normalisation factors. NORM should be the h5
                     file where the normalisation factors are to be saved.
+    --nlor=NLOR     Generate a set number of lors randomly. Does not use MINANG.
 """
 
 from math import fabs
@@ -65,7 +66,35 @@ def generate_normalisation_lors(outfile, geom_name, ang_sep, atn, norm):
             binOut.write(struct.pack('<I', j + i+1))
             lor_count += 1
     binOut.close()
-    return lor_count
+
+
+def generate_random_lors(outfile, geom_name, ang_sep, atn, norm, nlor=10000000):
+    geom_arr = get_geometry_histogram(geom_name, edges=False)
+
+    binOut = open(outfile, 'wb')
+    for i in range(nlor):
+        cry_indx = np.random.randint(0, len(geom_arr), size=2)
+        if i % 50000 == 0: print("processed", lor_count, "LORs")
+
+        pos1 = geom_arr[cry_indx[0]]
+        pos2 = geom_arr[cry_indx[1]]
+        if atn:
+            lor = (0.0, pos1[0] * np.cos(pos1[1]), pos1[0] * np.sin(pos1[1]), pos1[2],
+                        pos2[0] * np.cos(pos2[1]), pos2[0] * np.sin(pos2[1]), pos2[2])
+            # atn_corr = attenuation_correction(lor, True)
+            atn_corr = attenuation_correction(lor, False)
+            binOut.write(struct.pack('<f', atn_corr))
+        if norm:
+            lor = (0.0, pos1[0] * np.cos(pos1[1]), pos1[0] * np.sin(pos1[1]), pos1[2],
+                        pos2[0] * np.cos(pos2[1]), pos2[0] * np.sin(pos2[1]), pos2[2])
+            # lor_space = convert_to_lor_space(lor)
+            # norm_fact = norm_lookup(lor_space[1:-2])
+            norm_fact = interaction_norm(lor)
+            binOut.write(struct.pack('<f', norm_fact))
+        binOut.write(struct.pack('<I', i))
+        binOut.write(struct.pack('<I', j + i+1))
+    binOut.close()
+    return nlor
 
 
 def make_normalisation_header(outfile, geom_name, lor_count, atn, norm):
@@ -92,7 +121,12 @@ if __name__ == '__main__':
     ang_sep   = float(args['--ang']) * np.pi / 180.0
     atn       = args['--atn' ]
     norm      = args['--norm']
+    nlor      = args['--nlor']
     outname   = args['OUTPUT']
 
+    if nlor:
+        generate_random_lors(outname, geom_name, ang_sep, atn, norm, nlor)
+        make_normalisation_header(outname, geom_name, nlor, atn, norm)
+        exit()
     lor_count = generate_normalisation_lors(outname, geom_name, ang_sep, atn, norm)
     make_normalisation_header(outname, geom_name, lor_count, atn, norm)
