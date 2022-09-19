@@ -74,7 +74,7 @@ def generate_random_lors(outfile, geom_name, ang_sep, atn, norm, nlor=10000000):
     binOut = open(outfile, 'wb')
     for i in range(nlor):
         cry_indx = np.random.randint(0, len(geom_arr), size=2)
-        if i % 50000 == 0: print("processed", lor_count, "LORs")
+        if i % 50000 == 0: print("processed", i, "LORs")
 
         pos1 = geom_arr[cry_indx[0]]
         pos2 = geom_arr[cry_indx[1]]
