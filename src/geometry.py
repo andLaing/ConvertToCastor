@@ -294,7 +294,7 @@ def cylinder_body_intersect(r_cyl, ray0, ray_dir):
     body_b = 2 * (ray_dir[0] * ray0[0] + ray_dir[1] * ray0[1])
     body_c = ray0[0]**2 + ray0[1]**2 - r_cyl**2
     determ = body_b**2 - 4 * body_a * body_c
-    if determ < 0:
+    if determ < 0 or body_a == 0:
         return -1, None, None
 
     t1 = (-body_b + np.sqrt(determ)) / (2 * body_a)
