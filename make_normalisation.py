@@ -91,8 +91,8 @@ def generate_random_lors(outfile, geom_name, ang_sep, atn, norm, nlor=10000000):
             # norm_fact = norm_lookup(lor_space[1:-2])
             norm_fact = interaction_norm(lor)
             binOut.write(struct.pack('<f', norm_fact))
-        binOut.write(struct.pack('<I', i))
-        binOut.write(struct.pack('<I', j + i+1))
+        binOut.write(struct.pack('<I', cry_indx[0]))
+        binOut.write(struct.pack('<I', cry_indx[1]))
     binOut.close()
     return nlor
 
