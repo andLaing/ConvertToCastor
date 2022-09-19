@@ -125,8 +125,8 @@ if __name__ == '__main__':
     outname   = args['OUTPUT']
 
     if nlor:
-        generate_random_lors(outname, geom_name, ang_sep, atn, norm, nlor)
-        make_normalisation_header(outname, geom_name, nlor, atn, norm)
+        generate_random_lors(outname, geom_name, ang_sep, atn, norm, int(nlor))
+        make_normalisation_header(outname, geom_name, int(nlor), atn, norm)
         exit()
     lor_count = generate_normalisation_lors(outname, geom_name, ang_sep, atn, norm)
     make_normalisation_header(outname, geom_name, lor_count, atn, norm)
